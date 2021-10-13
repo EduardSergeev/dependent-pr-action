@@ -1,0 +1,19 @@
+name: 'Dependent PR check'
+description: 'Checks if current PR has any opened dependent PRs'
+
+inputs:
+  dependent-pr:
+    description: 'PR which this PR is dependent on'
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+    - uses: actions/github-script@v5
+      with:
+        script: |
+          github.rest.pulls.checkIfMerged({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            pull_number: "${{ inputs.dependent-pr }}"
+          })
