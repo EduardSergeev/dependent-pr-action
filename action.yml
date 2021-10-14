@@ -12,8 +12,14 @@ runs:
     - uses: actions/github-script@v5
       with:
         script: |
-          github.rest.pulls.checkIfMerged({
+          const response = github.rest.pulls.checkIfMerged({
             owner: context.repo.owner,
             repo: context.repo.repo,
-            pull_number: "${{ inputs.dependent-pr }}"
+            pull_number: ${{ inputs.dependent-pr }}
           })
+          if (response.ok) {
+            console.log(`PR #${${{ inputs.dependent-pr }}} has been merged. Dependency check passed.`)
+          } else {
+            console.error(`PR #${${{ inputs.dependent-pr }}} has yet to be merged. Dependency check failed.`)
+          }
+          return response
