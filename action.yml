@@ -12,6 +12,13 @@ runs:
     - uses: actions/github-script@v5
       with:
         script: |
+          const success = `PR #${${{ inputs.dependent-pr }}} has been merged. PR dependency check passed.`
+          const failure = `PR #${${{ inputs.dependent-pr }}} has yet to be merged. PR dependency check failed.`
+          let conclusion = 'success'
+          let output = {
+            title: 'Dependent PR check',
+            summary: success 
+          }
           try {
             const response = await github.rest.pulls.checkIfMerged({
               owner: context.repo.owner,
@@ -19,10 +26,21 @@ runs:
               pull_number: ${{ inputs.dependent-pr }}
             })
             if (response.status == 204) {
-              console.log(`PR #${${{ inputs.dependent-pr }}} has been merged. PR dependency check passed.`)
+              console.log(success)
             } else {
               throw Error(response.status)
             }
           } catch {     
-              core.setFailed(`PR #${${{ inputs.dependent-pr }}} has yet to be merged. PR dependency check failed.`)
+              console.log(failure)
+              conclusion = 'failure'
+              output.summary = failure
           }
+          await github.rest.checks.create({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            name: "Dependent PR check",
+            head_sha: context.sha,
+            status: 'completed',
+            conclusion: conclusion,
+            output: output
+          })
