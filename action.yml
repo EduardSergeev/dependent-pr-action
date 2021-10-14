@@ -12,14 +12,17 @@ runs:
     - uses: actions/github-script@v5
       with:
         script: |
-          const response = github.rest.pulls.checkIfMerged({
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-            pull_number: ${{ inputs.dependent-pr }}
-          })
-          if (response.ok) {
-            console.log(`PR #${${{ inputs.dependent-pr }}} has been merged. Dependency check passed.`)
-          } else {
-            console.error(`PR #${${{ inputs.dependent-pr }}} has yet to be merged. Dependency check failed.`)
+          try {
+            const response = await github.rest.pulls.checkIfMerged({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: ${{ inputs.dependent-pr }}
+            })
+            if (response.status == 204) {
+              console.log(`PR #${${{ inputs.dependent-pr }}} has been merged. PR dependency check passed.`)
+            } else {
+              throw Error(response.status)
+            }
+          } catch {     
+              core.setFailed(`PR #${${{ inputs.dependent-pr }}} has yet to be merged. PR dependency check failed.`)
           }
-          return response
